@@ -2,9 +2,12 @@ package org.launchcode.codingevents.controllers;
 
 import org.launchcode.codingevents.data.EventCategoryRepository;
 import org.launchcode.codingevents.data.EventRepository;
+import org.launchcode.codingevents.data.TagRepository;
 import org.launchcode.codingevents.models.Event;
 import org.launchcode.codingevents.models.EventCategory;
 import org.launchcode.codingevents.models.EventType;
+import org.launchcode.codingevents.models.Tag;
+import org.launchcode.codingevents.models.dto.EventTagDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,6 +15,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.nio.file.OpenOption;
 import java.util.Optional;
 
 /**
@@ -26,6 +30,9 @@ public class EventController {
 
     @Autowired
     private EventCategoryRepository eventCategoryRepository;
+
+    @Autowired
+    private TagRepository tagRepository;
 
     @GetMapping
     public String displayEvents(@RequestParam(required = false) Integer categoryId, Model model) {
@@ -82,6 +89,54 @@ public class EventController {
         }
 
         return "redirect:";
+    }
+
+    @GetMapping("add-tag")
+    public String displayAddTagForm(@RequestParam Integer eventId, Model model) {
+
+        Optional<Event> result = eventRepository.findById(eventId);
+        if(result.isEmpty()) {
+            model.addAttribute("title", "Invalid Event ID: " + eventId);
+            return "events/add-tag";
+        }
+        Event event = result.get();
+        model.addAttribute("title", "Add Tag to: " + event.getName());
+        model.addAttribute("tags", tagRepository.findAll());
+        EventTagDTO eventTag = new EventTagDTO();
+        eventTag.setEvent(event);
+        model.addAttribute("eventTag", eventTag);
+        return "events/add-tag";
+    }
+
+    @PostMapping("add-tag")
+    public String processAddTagForm(@ModelAttribute @Valid EventTagDTO eventTag, Errors validation, Model model) {
+        if(validation.hasErrors()) {
+            return "redirect:add-tag";
+        }
+        Event event = eventTag.getEvent();
+        Tag tag = eventTag.getTag();
+        if(!event.getTags().contains(tag)) {
+            event.addTag(tag);
+            eventRepository.save(event);
+        }
+        return "redirect:";
+    }
+
+    @GetMapping("byTag")
+    public String displayAllEventsByTag(@RequestParam Integer tagId, Model model) {
+        if(tagId == null) {
+            return "redirect:";
+        } else {
+            Optional<Tag> result = tagRepository.findById(tagId);
+            if(result.isEmpty()) {
+                model.addAttribute("title", "Invalid Tag ID:" + tagId);
+            } else {
+                Tag tag = result.get();
+                model.addAttribute("title", "Events containing Tag: " + tag.getName());
+                model.addAttribute("events", tag.getEvents());
+            }
+        }
+        return "events/index";
     }
 
 }

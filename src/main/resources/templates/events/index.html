@@ -13,6 +13,8 @@
             <th>Description</th>
             <th>Contact Email</th>
             <th>Type</th>
+            <th>Tags</th>
+            <th></th>
         </tr>
     </thead>
     <tr th:each="event : ${events}">
@@ -21,6 +23,8 @@
         <td th:text="${event.details.description}"></td>
         <td th:text="${event.details.contactEmail}"></td>
         <td th:text="${event.eventCategory}"></td>
+        <td th:text="${event.listTags()}"></td>
+        <td><a th:href="@{events/add-tag(eventId=${event.id})}">Add tag</a></td>
     </tr>
 </table>
 
